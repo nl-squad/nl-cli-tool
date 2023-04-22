@@ -66,6 +66,7 @@ if [[ $1 == "connect" ]]; then
 elif [[ $1 == "deploy" ]]; then
     exec_ssh "rm -rf ~/cod2/servers/$project/*"
     scp -i ~/.ssh/nl -r ./* ubuntu@mynl.pl:~/cod2/servers/$project
+    rcon_execute "say ^8[UPDATE] ^7Source code updated to ^9local version"
 elif [[ $1 == "restart" ]]; then
     exec_ssh "cd ~/cod2/servers/$project && docker-compose down && docker-compose up -d"
 elif [[ $1 == "logs" ]]; then
