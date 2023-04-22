@@ -56,12 +56,6 @@ function rcon_execute()
     echo "Executing command '$cmd' for server $ip:$port"
 
     response=$(echo -n -e "\xff\xff\xff\xffrcon $rcon $cmd" | nc -u -w 2 mynl.pl $port)
-
-    if [ -z "$RESPONSE" ]; then
-        echo "Error: No response from the server."
-        exit 1
-    fi
-
     clean_response=${response//$'\xff\xff\xff\xffprint'}
     RCON_RESPONSE=$clean_response
 }
