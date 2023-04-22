@@ -26,14 +26,42 @@ function exec_ssh()
 RCON_RESPONSE=""
 function rcon_execute()
 {
+    config_file="nl/server.cfg"
+    if [ ! -f $config_file ]; then
+        echo "Error: $config_file doesn't exist - can't read RCON password"
+        exit 1
+    fi
+
+    docker_compose_file=docker-compose.yml
+    if [ ! -f $config_file ]; then
+        echo "Error: $docker_compose_file doesn't exist - can't read server port"
+        exit 1
+    fi
+
     ip=mynl.pl
-    rcon=$(grep -i 'set rcon_password' nl/server.cfg | awk -F\" '{print $2}')
-    port=$(grep -i 'COD2_SET_net_port' docker-compose.yml | awk -F': ' '{print $2}')
+    rcon=$(grep -i 'set rcon_password' $config_file | awk -F\" '{print $2}')
+    port=$(grep -i 'COD2_SET_net_port' $docker_compose_file | awk -F': ' '{print $2}')
     cmd=$@
+
+    if [ -z "$rcon" ]; then
+        echo "Error: RCON password not found in the $config_file file."
+        exit 1
+    fi
+
+    if [ -z "$port" ]; then
+        echo "Error: Server port not found in the $docker_compose_file file."
+        exit 1
+    fi
 
     echo "Executing command '$cmd' for server $ip:$port"
 
     response=$(echo -n -e "\xff\xff\xff\xffrcon $rcon $cmd" | nc -u -w 2 mynl.pl $port)
+
+    if [ -z "$RESPONSE" ]; then
+        echo "Error: No response from the server."
+        exit 1
+    fi
+
     clean_response=${response//$'\xff\xff\xff\xffprint'}
     RCON_RESPONSE=$clean_response
 }
