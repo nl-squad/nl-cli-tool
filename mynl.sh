@@ -5,14 +5,17 @@ project=$(basename $PWD)
 function print_usage()
 {
     echo ""
-    echo "Available commands:"
+    echo "Control commands:"
     echo "mynl connect \t\t\t Connects to the machine."
     echo "mynl deploy \t\t\t Clears the remote folder and upload current content."
     echo "mynl restart \t\t\t Performs docker-compose down and then docker-compose up -d."
-    echo "mynl rotate \t\t\t Changes map on server to the following one defined in rotation."
-    echo "mynl status \t\t\t Prints the status of the server."
-    echo "mynl exec [command] \t\t Performs given command on the server."
     echo "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
+    echo ""
+    echo "RCON commands:"
+    echo "mynl status \t\t\t Prints the status of the server."
+    echo "mynl serverinfo \t\t\t Prints server information."
+    echo "mynl rotate \t\t\t Changes map on server to the following one defined in rotation."
+    echo "mynl exec [command] \t\t Performs given command on the server."
 }
 
 function exec_ssh()
@@ -43,17 +46,20 @@ elif [[ $1 == "deploy" ]]; then
     scp -i ~/.ssh/nl -r ./* ubuntu@mynl.pl:~/cod2/servers/$project
 elif [[ $1 == "restart" ]]; then
     exec_ssh "cd ~/cod2/servers/$project && docker-compose down && docker-compose up -d"
-elif [[ $1 == "rotate" ]]; then
-    rcon_execute "map_rotate"
+elif [[ $1 == "logs" ]]; then
+    exec_ssh "docker logs ${2:+--tail $2 }$project"
+elif [[ $1 == "serverinfo" ]]; then
+    rcon_execute "serverinfo"
     echo $RCON_RESPONSE
 elif [[ $1 == "status" ]]; then
     rcon_execute "status"
     echo $RCON_RESPONSE
+elif [[ $1 == "rotate" ]]; then
+    rcon_execute "map_rotate"
+    echo $RCON_RESPONSE
 elif [[ $1 == "exec" ]]; then
     rcon_execute "${@:2}"
     echo $RCON_RESPONSE
-elif [[ $1 == "logs" ]]; then
-    exec_ssh "docker logs ${2:+--tail $2 }$project"
 elif [[ -z $1 ]]; then
     echo "Error: Missing verb"
     print_usage
