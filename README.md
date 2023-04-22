@@ -5,4 +5,5 @@ Tool for NL servers communication and control also enabling local deployment.
 
 ```sh
 sudo cp mynl.sh /usr/local/bin/mynl.sh
+alias mynl='mynl.sh'
 ```
