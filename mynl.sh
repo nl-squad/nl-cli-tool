@@ -1,5 +1,17 @@
 #!/bin/zsh
 
+config_file="nl/server.cfg"
+if [ ! -f $config_file ]; then
+    echo "Error: $config_file doesn't exist. Please use mynl CLI tool from within NL directory."
+    exit 1
+fi
+
+docker_compose_file=docker-compose.yml
+if [ ! -f $config_file ]; then
+    echo "Error: $docker_compose_file doesn't exist. Please use mynl CLI tool from within NL directory."
+    exit 1
+fi
+
 project=$(basename $PWD)
 
 function print_usage()
@@ -26,18 +38,6 @@ function exec_ssh()
 RCON_RESPONSE=""
 function rcon_execute()
 {
-    config_file="nl/server.cfg"
-    if [ ! -f $config_file ]; then
-        echo "Error: $config_file doesn't exist - can't read RCON password"
-        exit 1
-    fi
-
-    docker_compose_file=docker-compose.yml
-    if [ ! -f $config_file ]; then
-        echo "Error: $docker_compose_file doesn't exist - can't read server port"
-        exit 1
-    fi
-
     ip=mynl.pl
     rcon=$(grep -i 'set rcon_password' $config_file | awk -F\" '{print $2}')
     port=$(grep -i 'COD2_SET_net_port' $docker_compose_file | awk -F': ' '{print $2}')
