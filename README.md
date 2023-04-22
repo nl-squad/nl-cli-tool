@@ -1,2 +1,2 @@
 # nl-cli-tool
-Tool for simplifying server communication, enabling local deployment and control.
+Tool for NL servers communication and control also enabling local deployment.
