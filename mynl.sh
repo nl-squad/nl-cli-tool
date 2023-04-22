@@ -4,7 +4,14 @@ project=$(basename $PWD)
 
 function print_usage()
 {
-    echo "Usage: nl.sh"
+    echo ""
+    echo "Available commands:"
+    echo "mynl connect \t\t\t Connects to the machine."
+    echo "mynl deploy \t\t\t Clears the remote folder and upload current content."
+    echo "mynl restart \t\t\t Performs docker-compose down and then docker-compose up -d."
+    echo "mynl rotate \t\t\t Changes map on server to the following one defined in rotation."
+    echo "mynl exec [command] \t\t Performs given command on the server."
+    echo "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
 }
 
 function exec_ssh()
