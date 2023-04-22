@@ -25,7 +25,7 @@ function rcon_execute()
     ip=mynl.pl
     rcon=$(grep -i 'set rcon_password' nl/server.cfg | awk -F\" '{print $2}')
     port=$(grep -i 'COD2_SET_net_port' docker-compose.yml | awk -F': ' '{print $2}')
-    cmd=$1
+    cmd=$@
 
     echo "Executing command '$cmd' for server $ip:$port"
 
