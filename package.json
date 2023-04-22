@@ -6,6 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "nl": "./index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nl-squad/nl-cli-tool.git"
@@ -20,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/nl-squad/nl-cli-tool/issues"
   },
-  "homepage": "https://github.com/nl-squad/nl-cli-tool#readme"
+  "homepage": "https://github.com/nl-squad/nl-cli-tool#readme",
+  "dependencies": {
+    "commander": "^10.0.1"
+  }
 }
