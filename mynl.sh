@@ -35,6 +35,9 @@ elif [[ $1 == "deploy" ]]; then
     scp -i ~/.ssh/nl -r ./* ubuntu@mynl.pl:~/cod2/servers/$project
 elif [[ $1 == "restart" ]]; then
     exec_ssh "cd ~/cod2/servers/$project && docker-compose down && docker-compose up -d"
+elif [[ $1 == "rotate" ]]; then
+    rcon_execute "map_rotate"
+    echo $RCON_RESPONSE
 else
     echo "Error: Invalid verb '$1'"
     print_usage
