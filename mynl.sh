@@ -18,6 +18,8 @@ if [[ $1 == "connect" ]]; then
 elif [[ $1 == "deploy" ]]; then
     exec_ssh "rm -rf ~/cod2/servers/$project/*"
     scp -i ~/.ssh/nl -r ./* ubuntu@mynl.pl:~/cod2/servers/$project
+elif [[ $1 == "restart" ]]; then
+    exec_ssh "cd ~/cod2/servers/$project && docker-compose down && docker-compose up -d"
 else
     echo "Error: Invalid verb '$1'"
     print_usage
