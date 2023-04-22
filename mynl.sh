@@ -13,7 +13,7 @@ function print_usage()
     echo ""
     echo "RCON commands:"
     echo "mynl status \t\t\t Prints the status of the server."
-    echo "mynl serverinfo \t\t\t Prints server information."
+    echo "mynl serverinfo \t\t Prints server information."
     echo "mynl rotate \t\t\t Changes map on server to the following one defined in rotation."
     echo "mynl exec [command] \t\t Performs given command on the server."
 }

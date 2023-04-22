@@ -4,6 +4,5 @@ Tool for NL servers communication and control also enabling local deployment.
 # Installation
 
 ```sh
-npm i -g
-mynl --help
+sudo cp mynl.sh /usr/local/bin/mynl.sh
 ```
