@@ -85,6 +85,9 @@ elif [[ $1 == "status" ]]; then
 elif [[ $1 == "rotate" ]]; then
     rcon_execute "map_rotate"
     echo $RCON_RESPONSE
+elif [[ $1 == "map" ]]; then
+    rcon_execute "map $2"
+    echo $RCON_RESPONSE
 elif [[ $1 == "exec" ]]; then
     rcon_execute "${@:2}"
     echo $RCON_RESPONSE
