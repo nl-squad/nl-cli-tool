@@ -15,6 +15,9 @@ function exec_ssh()
 if [[ $1 == "connect" ]]; then
     echo "Connecting to mynl.pl SSH"
     exec_ssh "cd ~/cod2/servers/$project ; bash --login"
+elif [[ $1 == "deploy" ]]; then
+    exec_ssh "rm -rf ~/cod2/servers/$project/*"
+    scp -i ~/.ssh/nl -r ./* ubuntu@mynl.pl:~/cod2/servers/$project
 else
     echo "Error: Invalid verb '$1'"
     print_usage
