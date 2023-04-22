@@ -12,6 +12,21 @@ function exec_ssh()
     ssh -i ~/.ssh/nl -t ubuntu@mynl.pl "$1"
 }
 
+RCON_RESPONSE=""
+function rcon_execute()
+{
+    ip=mynl.pl
+    rcon=$(grep -i 'set rcon_password' nl/server.cfg | awk -F\" '{print $2}')
+    port=$(grep -i 'COD2_SET_net_port' docker-compose.yml | awk -F': ' '{print $2}')
+    cmd=$1
+
+    echo "Executing command '$cmd' for server $ip:$port"
+
+    response=$(echo -n -e "\xff\xff\xff\xffrcon $rcon $cmd" | nc -u -w 2 mynl.pl $port)
+    clean_response=${response//$'\xff\xff\xff\xffprint'}
+    RCON_RESPONSE=$clean_response
+}
+
 if [[ $1 == "connect" ]]; then
     echo "Connecting to mynl.pl SSH"
     exec_ssh "cd ~/cod2/servers/$project ; bash --login"
