@@ -45,6 +45,11 @@ elif [[ $1 == "restart" ]]; then
 elif [[ $1 == "rotate" ]]; then
     rcon_execute "map_rotate"
     echo $RCON_RESPONSE
+elif [[ $1 == "exec" ]]; then
+    rcon_execute "${@:2}"
+    echo $RCON_RESPONSE
+elif [[ $1 == "logs" ]]; then
+    exec_ssh "docker logs ${2:+--tail $2 }$project"
 elif [[ -z $1 ]]; then
     echo "Error: Missing verb"
     print_usage
