@@ -38,6 +38,10 @@ elif [[ $1 == "restart" ]]; then
 elif [[ $1 == "rotate" ]]; then
     rcon_execute "map_rotate"
     echo $RCON_RESPONSE
+elif [[ -z $1 ]]; then
+    echo "Error: Missing verb"
+    print_usage
+    exit 1
 else
     echo "Error: Invalid verb '$1'"
     print_usage
