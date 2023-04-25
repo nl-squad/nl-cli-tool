@@ -39,8 +39,8 @@ RCON_RESPONSE=""
 function rcon_execute()
 {
     ip=mynl.pl
-    rcon=$(grep -i 'set rcon_password' $config_file | awk -F\" '{print $2}')
-    port=$(grep -i 'COD2_SET_net_port' $docker_compose_file | awk -F': ' '{print $2}')
+    rcon=$(grep -i 'set rcon_password' $config_file | awk -F\" '{print $2}' | tr -d '[:space:]')
+    port=$(grep -i 'COD2_SET_net_port' $docker_compose_file | awk -F': ' '{print $2}' | tr -d '[:space:]')
     cmd=$@
 
     if [ -z "$rcon" ]; then
@@ -53,7 +53,7 @@ function rcon_execute()
         exit 1
     fi
 
-    echo "Executing command '$cmd' for server $ip:$port"
+    echo "Executing command '$cmd' for server $ip:$port."
 
     response=$(echo -n -e "\xff\xff\xff\xffrcon $rcon $cmd" | nc -u -w 2 mynl.pl $port)
     clean_response=${response//$'\xff\xff\xff\xffprint'}
