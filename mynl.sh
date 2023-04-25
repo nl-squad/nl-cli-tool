@@ -64,8 +64,7 @@ if [[ $1 == "connect" ]]; then
     echo "Connecting to mynl.pl SSH"
     exec_ssh "cd ~/cod2/servers/$project ; bash --login"
 elif [[ $1 == "deploy" ]]; then
-    exec_ssh "rm -rf ~/cod2/servers/$project/*"
-    scp -i ~/.ssh/nl -r ./* ubuntu@mynl.pl:~/cod2/servers/$project
+    rsync -az -e "ssh -i ~/.ssh/nl" --progress ./* ubuntu@mynl.pl:~/cod2/servers/$project
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
     exec_ssh "cd ~/cod2/servers/$project && docker-compose down && docker-compose up -d"
