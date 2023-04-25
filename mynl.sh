@@ -66,6 +66,9 @@ if [[ $1 == "connect" ]]; then
 elif [[ $1 == "deploy" ]]; then
     rsync -az -e "ssh -i ~/.ssh/nl" --progress ./* ubuntu@mynl.pl:~/cod2/servers/$project
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
+elif [[ $1 == "clean-deploy" ]]; then
+    rsync -az -e "ssh -i ~/.ssh/nl" --progress --delete ./* ubuntu@mynl.pl:~/cod2/servers/$project
+    rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
     exec_ssh "cd ~/cod2/servers/$project && docker-compose down && docker-compose up -d"
 elif [[ $1 == "logs" ]]; then
