@@ -18,16 +18,18 @@ function print_usage()
 {
     echo ""
     echo "Control commands:"
-    echo "mynl connect \t\t\t Connects to the machine."
-    echo "mynl deploy \t\t\t Clears the remote folder and upload current content."
-    echo "mynl restart \t\t\t Performs docker-compose down and then docker-compose up -d."
-    echo "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
+    echo -e "mynl connect \t\t\t Connects to the machine."
+    echo -e "mynl deploy \t\t\t Sync current content."
+    echo -e "mynl clean-deploy \t\t Syncs current content and removes remote files that don't exist locally."
+    echo -e "mynl restart \t\t\t Performs docker-compose down and then docker-compose up -d."
+    echo -e "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
     echo ""
     echo "RCON commands:"
-    echo "mynl status \t\t\t Prints the status of the server."
-    echo "mynl serverinfo \t\t Prints server information."
-    echo "mynl rotate \t\t\t Changes map on server to the following one defined in rotation."
-    echo "mynl exec [command] \t\t Performs given command on the server."
+    echo -e "mynl serverinfo \t\t Prints server information."
+    echo -e "mynl status \t\t\t Prints the status of the server."
+    echo -e "mynl rotate \t\t\t Changes map on server to the following one defined in rotation."
+    echo -e "mynl map <map-name> \t\t Changes map to requested one."
+    echo -e "mynl exec <command> \t\t Performs given command on the server."
 }
 
 function exec_ssh()
