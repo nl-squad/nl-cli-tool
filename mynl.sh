@@ -74,7 +74,8 @@ elif [[ $1 == "restart" ]]; then
     [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
     exec_ssh "cd ~/cod2/servers/$project && docker-compose up --force-recreate ${detach_arg}"
 elif [[ $1 == "logs" ]]; then
-    exec_ssh "docker logs ${2:+--tail $2 }$project"
+    flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
+    exec_ssh "docker logs $flag_arg $project"
 elif [[ $1 == "serverinfo" ]]; then
     rcon_execute "serverinfo"
     echo $RCON_RESPONSE
