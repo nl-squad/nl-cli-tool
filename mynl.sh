@@ -70,7 +70,9 @@ elif [[ $1 == "deploy" ]]; then
     rsync -az -e "ssh -i ~/.ssh/nl" --progress ${delete_arg} ./* ubuntu@mynl.pl:~/cod2/servers/$project
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
-    exec_ssh "cd ~/cod2/servers/$project && docker-compose down && docker-compose up -d"
+    detach_arg=$([[ $2 == "detach" ]] && echo "-d")
+    [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
+    exec_ssh "cd ~/cod2/servers/$project && docker-compose up --force-recreate ${detach_arg}"
 elif [[ $1 == "logs" ]]; then
     exec_ssh "docker logs ${2:+--tail $2 }$project"
 elif [[ $1 == "serverinfo" ]]; then
