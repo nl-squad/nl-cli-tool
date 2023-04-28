@@ -37,6 +37,7 @@ function print_usage()
     echo -e "mynl deploy \t\t\t Sync current content."
     echo -e "mynl deploy clean \t\t Syncs current content and removes remote files that don't exist locally."
     echo -e "mynl restart \t\t\t Executes restart.sh on remote machine."
+    echo -e "mynl restart detached \t\t Executes restart.sh on remote machine with detached mode."
     echo -e "mynl logs follow \t\t Attaches to project log stream."
     echo -e "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
     echo ""
@@ -96,7 +97,9 @@ elif [[ $1 == "deploy" ]]; then
     rsync -az -e "ssh -i ~/.ssh/nl" --progress ${delete_arg} --exclude 'nl/empty000.iwd' --exclude 'library' --exclude '.DS_Store' ./* ubuntu@mynl.pl:~/cod2/servers/$project
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
-    exec_ssh "cd ~/cod2/servers/$project && ./restart.sh"
+    detach_arg=$([[ $2 == "detach" ]] && echo "detach")
+    [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
+    exec_ssh "cd ~/cod2/servers/$project && ./restart.sh $detach_arg"
 elif [[ $1 == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
     exec_ssh "docker logs $flag_arg $project"
