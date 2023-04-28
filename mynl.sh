@@ -94,7 +94,7 @@ if [[ $1 == "connect" ]]; then
     exec_ssh "cd ~/cod2/servers/$project ; bash --login"
 elif [[ $1 == "deploy" ]]; then
     delete_arg=$([[ $2 == "clean" ]] && echo "--delete")
-    rsync -az -e "ssh -i ~/.ssh/nl" --progress ${delete_arg} --exclude 'nl/000empty.iwd' --exclude 'library' --exclude '.DS_Store' ./* ubuntu@mynl.pl:~/cod2/servers/$project
+    rsync -az -e "ssh -i ~/.ssh/nl" --progress ${delete_arg} --exclude 'nl/000empty.iwd' --exclude 'library' --exclude='nl/maps/mp/mp_*.gsc' --exclude '.DS_Store' ./* ubuntu@mynl.pl:~/cod2/servers/$project
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
     detach_arg=$([[ $2 == "detach" ]] && echo "detach")
