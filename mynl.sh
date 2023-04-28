@@ -107,7 +107,30 @@ elif [[ $1 == "serverinfo" ]]; then
     echo $SERVER_RESPONSE
 elif [[ $1 == "status" ]]; then
     rcon_execute "status"
-    echo $RCON_RESPONSE
+    echo $SERVER_RESPONSE
+elif [[ $1 == "getstatus" ]]; then
+    server_execute "getstatus"
+
+    # Extract the current map name, hostname, players list, and player count
+    current_map=$(echo "$SERVER_RESPONSE" | awk -F'\\' '{for (i=1; i<=NF; i++) if ($i == "mapname") print $(i+1)}')
+    hostname=$(echo "$SERVER_RESPONSE" | awk -F'\\' '{for (i=1; i<=NF; i++) if ($i == "sv_hostname") print $(i+1)}')
+    players_list=$(echo "$SERVER_RESPONSE" | awk -F'\n' '/^[0-9]+ .*$/ {print $0}')
+    player_count=$(echo "$PLAYERS_LIST" | wc -l)
+
+    # Check if the map name and hostname were successfully extracted
+    if [ -z "$current_map" ] || [ -z "$hostname" ]; then
+        echo "Error: Could not retrieve the required information from the CoD2 server."
+    else
+        echo "-------------------"
+        echo_colorize "$hostname ^7playing ^3$current_map^7, with ^3$player_count ^7players:"
+
+        # Print each player's score and name
+        while read -r player; do
+            player_score=$(echo "$player" | cut -d' ' -f1)
+            player_name=$(echo "$player" | cut -d' ' -f3- | tr -d '"')
+            echo_colorize "Name: $player_name ^7| Score: ^2$player_score"
+        done <<< "$players_list"
+    fi
 elif [[ $1 == "rotate" ]]; then
     rcon_execute "map_rotate"
     echo $SERVER_RESPONSE
