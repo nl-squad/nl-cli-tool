@@ -14,6 +14,21 @@ fi
 
 project=$(basename $PWD)
 
+echo_colorize() {
+    local input="$1"
+    local output="${input//^0/\\e[30m}"
+    output="${output//^1/\\e[31m}"
+    output="${output//^2/\\e[32m}"
+    output="${output//^3/\\e[33m}"
+    output="${output//^4/\\e[34m}"
+    output="${output//^5/\\e[36m}"
+    output="${output//^6/\\e[35m}"
+    output="${output//^7/\\e[97m}"
+    output="${output//^8/\\e[94m}"
+    output="${output//^9/\\e[90m}"
+    echo -e "${output}\e[0m"
+}
+
 function print_usage()
 {
     echo ""
