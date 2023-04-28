@@ -36,8 +36,7 @@ function print_usage()
     echo -e "mynl connect \t\t\t Connects to the machine."
     echo -e "mynl deploy \t\t\t Sync current content."
     echo -e "mynl deploy clean \t\t Syncs current content and removes remote files that don't exist locally."
-    echo -e "mynl restart \t\t\t Performs docker-compose recreate."
-    echo -e "mynl restart detached \t\t Performs docker-compose recreate with detached mode."
+    echo -e "mynl restart \t\t\t Executes restart.sh on remote machine."
     echo -e "mynl logs follow \t\t Attaches to project log stream."
     echo -e "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
     echo ""
@@ -97,9 +96,7 @@ elif [[ $1 == "deploy" ]]; then
     rsync -az -e "ssh -i ~/.ssh/nl" --progress ${delete_arg} --exclude 'nl/empty000.iwd' --exclude 'library' ./* ubuntu@mynl.pl:~/cod2/servers/$project
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
-    detach_arg=$([[ $2 == "detach" ]] && echo "-d")
-    [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
-    exec_ssh "cd ~/cod2/servers/$project && docker-compose up --force-recreate ${detach_arg}"
+    exec_ssh "cd ~/cod2/servers/$project && ./restart.sh"
 elif [[ $1 == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
     exec_ssh "docker logs $flag_arg $project"
