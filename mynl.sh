@@ -54,12 +54,10 @@ function exec_ssh()
     ssh -i ~/.ssh/nl -t ubuntu@mynl.pl "$1"
 }
 
-RCON_RESPONSE=""
+SERVER_RESPONSE=""
 function rcon_execute()
 {
-    ip=mynl.pl
     rcon=$(grep -i 'set rcon_password' $config_file | awk -F\" '{print $2}' | tr -d '[:space:]')
-    port=$(grep -i 'COD2_SET_net_port' $docker_compose_file | awk -F': ' '{print $2}' | tr -d '[:space:]')
     cmd=$@
 
     if [ -z "$rcon" ]; then
@@ -67,16 +65,27 @@ function rcon_execute()
         exit 1
     fi
 
+    server_execute "rcon $rcon $cmd"
+}
+
+function server_execute()
+{
+    ip=mynl.pl
+    port=$(grep -i 'COD2_SET_net_port' $docker_compose_file | awk -F': ' '{print $2}' | tr -d '[:space:]')
+    cmd=$@
+
     if [ -z "$port" ]; then
         echo "Error: Server port not found in the $docker_compose_file file."
         exit 1
     fi
 
-    echo "Executing command '$cmd' for server $ip:$port."
+    obfuscated_cmd=$(echo $cmd | sed -e 's/\(rcon\) \(\w\+\) \(.\+\)/\1 ***** \3/g' )
+    echo "Executing command '$obfuscated_cmd' for server $ip:$port."
 
-    response=$(echo -n -e "\xff\xff\xff\xffrcon $rcon $cmd" | nc -u -w 2 mynl.pl $port)
+    response=$(echo -n -e "\xff\xff\xff\xff$cmd" | nc -u -w 2 mynl.pl $port)
     clean_response=${response//$'\xff\xff\xff\xffprint'}
-    RCON_RESPONSE=$clean_response
+    clean_response=$(echo $clean_response | tr -cd '\11\12\15\40-\176')
+    SERVER_RESPONSE=$clean_response
 }
 
 if [[ $1 == "connect" ]]; then
@@ -95,19 +104,19 @@ elif [[ $1 == "logs" ]]; then
     exec_ssh "docker logs $flag_arg $project"
 elif [[ $1 == "serverinfo" ]]; then
     rcon_execute "serverinfo"
-    echo $RCON_RESPONSE
+    echo $SERVER_RESPONSE
 elif [[ $1 == "status" ]]; then
     rcon_execute "status"
     echo $RCON_RESPONSE
 elif [[ $1 == "rotate" ]]; then
     rcon_execute "map_rotate"
-    echo $RCON_RESPONSE
+    echo $SERVER_RESPONSE
 elif [[ $1 == "map" ]]; then
     rcon_execute "map $2"
-    echo $RCON_RESPONSE
+    echo $SERVER_RESPONSE
 elif [[ $1 == "exec" ]]; then
     rcon_execute "${@:2}"
-    echo $RCON_RESPONSE
+    echo $SERVER_RESPONSE
 elif [[ -z $1 ]]; then
     echo "Error: Missing verb"
     print_usage
