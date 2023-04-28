@@ -80,7 +80,7 @@ function server_execute()
         exit 1
     fi
 
-    obfuscated_cmd=$(echo $cmd | sed -e 's/\(rcon\) \(\w\+\) \(.\+\)/\1 ***** \3/g' )
+    obfuscated_cmd=$(echo $cmd | perl -pe 's/(rcon) (\w+) (.+)/\1 ***** \3/g')
     echo "Executing command '$obfuscated_cmd' for server $ip:$port."
 
     response=$(echo -n -e "\xff\xff\xff\xff$cmd" | nc -u -w 2 mynl.pl $port)
