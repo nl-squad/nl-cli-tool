@@ -42,6 +42,7 @@ function print_usage()
     echo -e "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
     echo ""
     echo "RCON commands:"
+    echo -e "mynl getstatus \t\t\t Gets public server status (without using rcon password)."
     echo -e "mynl serverinfo \t\t Prints server information."
     echo -e "mynl status \t\t\t Prints the status of the server."
     echo -e "mynl rotate \t\t\t Rptates the map on server to the next one."
