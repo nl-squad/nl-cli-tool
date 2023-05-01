@@ -18,7 +18,7 @@ function extract_value_or_exit() {
     echo "$value"
 }
 
-project=$(extract_value_or_exit '.name')
+
 connection_address=$(extract_value_or_exit '.connection.address')
 
 echo_colorize() {
@@ -109,6 +109,7 @@ elif [[ $1 == "restart" ]]; then
     exec_ssh "cd $restart_path && ./restart.sh $detach_arg"
 elif [[ $1 == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
+    project=$(extract_value_or_exit '.deployment.logsContainer')
     exec_ssh "docker logs $flag_arg $project"
 elif [[ $1 == "serverinfo" ]]; then
     rcon_execute "serverinfo"

@@ -1,5 +1,4 @@
 {
-    "name": "nl-cod2-map-test",
     "connection": {
         "address": "mynl.pl",
         "user": "ubuntu",
@@ -13,7 +12,8 @@
             "library",
             "nl/maps/mp/mp_*.gsc",
             "nl/blanco"
-        ]
+        ],
+        "logsContainer": "nl-cod2-map-test"
     },
     "restart": {
         "path": "~/cod2/servers/nl-cod2-map-test"
