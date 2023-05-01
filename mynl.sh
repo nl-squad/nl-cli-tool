@@ -6,6 +6,7 @@ if [ ! -f $project_definition ]; then
     exit 1
 fi
 
+### Functions - start
 function extract_value_or_exit() {
     local key=$1
     local value=$(jq -r "$key" "$project_definition")
@@ -18,10 +19,7 @@ function extract_value_or_exit() {
     echo "$value"
 }
 
-
-connection_address=$(extract_value_or_exit '.connection.address')
-
-echo_colorize() {
+function echo_colorize() {
     local input="$1"
     local output="${input//^0/\\e[30m}"
     output="${output//^1/\\e[31m}"
@@ -38,7 +36,6 @@ echo_colorize() {
 
 function print_usage()
 {
-    echo ""
     echo "Control commands:"
     echo -e "mynl connect \t\t\t Connects to the machine."
     echo -e "mynl deploy \t\t\t Sync current content."
@@ -54,6 +51,8 @@ function print_usage()
     echo -e "mynl rotate \t\t\t Rptates the map on server to the next one."
     echo -e "mynl map <map-name> \t\t Changes map to requested one."
     echo -e "mynl exec <command> \t\t Performs given command on the server."
+    echo ""
+    echo "To change profile use 'export PROFILE=myprofile'"
 }
 
 function exec_ssh()
@@ -66,14 +65,14 @@ function exec_ssh()
 SERVER_RESPONSE=""
 function rcon_execute()
 {
-    rcon=$(extract_value_or_exit '.cod2.rconPassword')
+    rcon=$(extract_value_or_exit ".profiles.$profile.cod2.rconPassword")
     cmd=$@
     server_execute "rcon $rcon $cmd"
 }
 
 function server_execute()
 {
-    cod2_port=$(extract_value_or_exit '.cod2.port')
+    cod2_port=$(extract_value_or_exit ".profiles.$profile.cod2.port")
     cmd=$@
     obfuscated_cmd=$(echo $cmd | perl -pe 's/(rcon) (\w+) (.+)/\1 ***** \3/g')
     echo "Executing command '$obfuscated_cmd' for server $connection_address:$cod2_port."
@@ -83,17 +82,33 @@ function server_execute()
     clean_response=$(echo $clean_response | tr -cd '\11\12\15\40-\176')
     SERVER_RESPONSE=$clean_response
 }
+### Functions - end
 
-if [[ $1 == "connect" ]]; then
-    deployment_remote_path=$(extract_value_or_exit '.deployment.remotePath')
+command="$1"
+profile=$PROFILE
+if [[ -z $profile ]]; then
+    profile=default
+fi
+
+if [[ $(jq -r ".profiles.$profile" "$project_definition") = "null" ]]; then
+    echo "Error: Profile named '$profile' not found, to change profile try:"
+    echo "export PROFILE=myprofile"
+    exit 1
+fi
+echo "Executing with profile $profile"
+
+connection_address=$(extract_value_or_exit '.connection.address')
+
+if [[ $command == "connect" ]]; then
+    deployment_remote_path=$(extract_value_or_exit ".profiles.$profile.remoteDeploymentPath")
     echo "Connecting to $connection_address SSH"
     exec_ssh "cd $deployment_remote_path ; bash --login"
-elif [[ $1 == "deploy" ]]; then
+elif [[ $command == "deploy" ]]; then
     connection_user=$(extract_value_or_exit '.connection.user')
     connection_key_path=$(extract_value_or_exit '.connection.keyPath')
-    exclude_list=($(jq -r '.deployment.rsyncExclude | .[]' "$project_definition"))
-    deployment_remote_path=$(extract_value_or_exit '.deployment.remotePath')
-    deployment_local_path=$(extract_value_or_exit '.deployment.localPath')
+    exclude_list=($(jq -r ".profiles.$profile.rsyncExclude | .[]" "$project_definition"))
+    deployment_remote_path=$(extract_value_or_exit ".profiles.$profile.remoteDeploymentPath")
+    deployment_local_path=$(extract_value_or_exit ".profiles.$profile.localDeploymentPath")
 
     for exclude_item in "${exclude_list[@]}"; do
         exclude_options+=("--exclude=$exclude_item")
@@ -101,22 +116,22 @@ elif [[ $1 == "deploy" ]]; then
 
     (cd $deployment_local_path && rsync -az -e "ssh -i $connection_key_path" --progress --delete ${exclude_options[@]} ./* $connection_user@$connection_address:$deployment_remote_path)
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
-elif [[ $1 == "restart" ]]; then
-    restart_path=$(extract_value_or_exit '.restart.path')
+elif [[ $command == "restart" ]]; then
+    restart_path=$(extract_value_or_exit ".profiles.$profile.restartPath")
     detach_arg=$([[ $2 == "detach" ]] && echo "detach")
     [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
     exec_ssh "cd $restart_path && ./restart.sh $detach_arg"
-elif [[ $1 == "logs" ]]; then
+elif [[ $command == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
-    project=$(extract_value_or_exit '.deployment.logsContainer')
+    project=$(extract_value_or_exit ".profiles.$profile.containerName")
     exec_ssh "docker logs $flag_arg $project"
-elif [[ $1 == "serverinfo" ]]; then
+elif [[ $command == "serverinfo" ]]; then
     rcon_execute "serverinfo"
     echo $SERVER_RESPONSE
-elif [[ $1 == "status" ]]; then
+elif [[ $command == "status" ]]; then
     rcon_execute "status"
     echo $SERVER_RESPONSE
-elif [[ $1 == "getstatus" ]]; then
+elif [[ $command == "getstatus" ]]; then
     server_execute "getstatus"
 
     # Extract the current map name, hostname, players list, and player count
@@ -139,16 +154,16 @@ elif [[ $1 == "getstatus" ]]; then
             echo_colorize "Name: $player_name ^7| Score: ^2$player_score"
         done <<< "$players_list"
     fi
-elif [[ $1 == "rotate" ]]; then
+elif [[ $command == "rotate" ]]; then
     rcon_execute "map_rotate"
     echo $SERVER_RESPONSE
-elif [[ $1 == "map" ]]; then
+elif [[ $command == "map" ]]; then
     rcon_execute "map $2"
     echo $SERVER_RESPONSE
-elif [[ $1 == "exec" ]]; then
+elif [[ $command == "exec" ]]; then
     rcon_execute "${@:2}"
     echo $SERVER_RESPONSE
-elif [[ -z $1 ]]; then
+elif [[ -z $command ]]; then
     echo "Error: Missing verb"
     print_usage
     exit 1
