@@ -42,7 +42,6 @@ function print_usage()
     echo "Control commands:"
     echo -e "mynl connect \t\t\t Connects to the machine."
     echo -e "mynl deploy \t\t\t Sync current content."
-    echo -e "mynl deploy clean \t\t Syncs current content and removes remote files that don't exist locally."
     echo -e "mynl restart \t\t\t Executes restart.sh on remote machine."
     echo -e "mynl restart detached \t\t Executes restart.sh on remote machine with detached mode."
     echo -e "mynl logs follow \t\t Attaches to project log stream."
@@ -90,7 +89,6 @@ if [[ $1 == "connect" ]]; then
     echo "Connecting to $connection_address SSH"
     exec_ssh "cd $deployment_remote_path ; bash --login"
 elif [[ $1 == "deploy" ]]; then
-    delete_arg=$([[ $2 == "clean" ]] && echo "--delete")
     connection_user=$(extract_value_or_exit '.connection.user')
     connection_key_path=$(extract_value_or_exit '.connection.keyPath')
     exclude_list=($(jq -r '.deployment.rsyncExclude | .[]' "$project_definition"))
@@ -101,7 +99,7 @@ elif [[ $1 == "deploy" ]]; then
         exclude_options+=("--exclude=$exclude_item")
     done
 
-    (cd $deployment_local_path && rsync -az -e "ssh -i $connection_key_path" --progress $delete_arg ${exclude_options[@]} ./* $connection_user@$connection_address:$deployment_remote_path)
+    (cd $deployment_local_path && rsync -az -e "ssh -i $connection_key_path" --progress --delete ${exclude_options[@]} ./* $connection_user@$connection_address:$deployment_remote_path)
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
     restart_path=$(extract_value_or_exit '.restart.path')
