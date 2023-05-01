@@ -1,0 +1,20 @@
+{
+    "name": "nl-cod2-map-test",
+    "deployment": {
+        "path": "~/cod2/servers/nl-cod2-map-test",
+        "rsyncExclude": [
+            ".DS_Store",
+            "nl/000empty.iwd",
+            "library",
+            "nl/maps/mp/mp_*.gsc",
+            "nl/blanco"
+        ]
+    },
+    "restart": {
+        "path": "~/cod2/servers/nl-cod2-map-test"
+    },
+    "cod2": {
+        "port": 6,
+        "rconPassword": "thievessucks_2"
+    }
+}
