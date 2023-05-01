@@ -1,18 +1,22 @@
 #!/bin/zsh
 
-config_file="nl/server.cfg"
-if [ ! -f $config_file ]; then
-    echo "Error: $config_file doesn't exist. Please use mynl CLI tool from within NL directory."
+project_definition="project-definition.json"
+if [ ! -f $project_definition ]; then
+    echo "Error: $project_definition doesn't exist. Please use mynl CLI tool from within NL directory."
     exit 1
 fi
 
-docker_compose_file=docker-compose.yml
-if [ ! -f $config_file ]; then
-    echo "Error: $docker_compose_file doesn't exist. Please use mynl CLI tool from within NL directory."
+project=$(jq -r '.name' $project_definition)
+if [ "$project" = "null" ]; then
+    echo "Error: Project name not found in the $project_definition file."
     exit 1
 fi
 
-project=$(basename $PWD)
+deployment_path=$(jq -r '.deployment.path' $project_definition)
+if [ "$deployment_path" = "null" ]; then
+    echo "Error: Deployment path not found in the $project_definition file."
+    exit 1
+fi
 
 echo_colorize() {
     local input="$1"
@@ -58,11 +62,11 @@ function exec_ssh()
 SERVER_RESPONSE=""
 function rcon_execute()
 {
-    rcon=$(grep -i 'set rcon_password' $config_file | awk -F\" '{print $2}' | tr -d '[:space:]')
+    rcon=$(jq -r '.cod2.rconPassword' $project_definition)
     cmd=$@
 
-    if [ -z "$rcon" ]; then
-        echo "Error: RCON password not found in the $config_file file."
+    if [ "$rcon" = "null" ]; then
+        echo "Error: RCON password not found in the $project_definition file."
         exit 1
     fi
 
@@ -71,19 +75,18 @@ function rcon_execute()
 
 function server_execute()
 {
-    ip=mynl.pl
-    port=$(grep -i 'COD2_SET_net_port' $docker_compose_file | awk -F': ' '{print $2}' | tr -d '[:space:]')
-    cmd=$@
-
-    if [ -z "$port" ]; then
-        echo "Error: Server port not found in the $docker_compose_file file."
+    cod2_port=$(jq -r '.cod2.port' $project_definition)
+    if [ "$cod2_port" = "null" ]; then
+        echo "Error: CoD2 port not found in the $project_definition file."
         exit 1
     fi
 
+    ip=mynl.pl
+    cmd=$@
     obfuscated_cmd=$(echo $cmd | perl -pe 's/(rcon) (\w+) (.+)/\1 ***** \3/g')
-    echo "Executing command '$obfuscated_cmd' for server $ip:$port."
+    echo "Executing command '$obfuscated_cmd' for server $ip:$cod2_port."
 
-    response=$(echo -n -e "\xff\xff\xff\xff$cmd" | nc -u -w 2 mynl.pl $port)
+    response=$(echo -n -e "\xff\xff\xff\xff$cmd" | nc -u -w 2 mynl.pl $cod2_port)
     clean_response=${response//$'\xff\xff\xff\xffprint'}
     clean_response=$(echo $clean_response | tr -cd '\11\12\15\40-\176')
     SERVER_RESPONSE=$clean_response
@@ -91,15 +94,28 @@ function server_execute()
 
 if [[ $1 == "connect" ]]; then
     echo "Connecting to mynl.pl SSH"
-    exec_ssh "cd ~/cod2/servers/$project ; bash --login"
+    exec_ssh "cd $deployment_path ; bash --login"
 elif [[ $1 == "deploy" ]]; then
     delete_arg=$([[ $2 == "clean" ]] && echo "--delete")
-    rsync -az -e "ssh -i ~/.ssh/nl" --progress ${delete_arg} --exclude 'nl/000empty.iwd' --exclude 'library' --exclude='nl/maps/mp/mp_*.gsc' --exclude '.DS_Store' ./* ubuntu@mynl.pl:~/cod2/servers/$project
+    exclude_list=($(jq -r '.deployment.rsyncExclude | .[]' "$project_definition"))
+
+    rsync_exclude_options=""
+    for exclude_item in "${exclude_list[@]}"; do
+        rsync_exclude_options+=" --exclude=$exclude_item"
+    done
+
+    rsync -az -e "ssh -i ~/.ssh/nl" --progress $delete_arg $rsync_exclude_options ./* ubuntu@mynl.pl:$deployment_path
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
+    restart_path=$(jq -r '.restart.path' $project_definition)
+    if [ "$restart_path" = "null" ]; then
+        echo "Error: Restart path not found in the $project_definition file."
+        exit 1
+    fi
+
     detach_arg=$([[ $2 == "detach" ]] && echo "detach")
     [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
-    exec_ssh "cd ~/cod2/servers/$project && ./restart.sh $detach_arg"
+    exec_ssh "cd $restart_path && ./restart.sh $detach_arg"
 elif [[ $1 == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
     exec_ssh "docker logs $flag_arg $project"
