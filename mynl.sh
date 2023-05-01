@@ -86,21 +86,22 @@ function server_execute()
 }
 
 if [[ $1 == "connect" ]]; then
-    deployment_path=$(extract_value_or_exit '.deployment.path')
+    deployment_remote_path=$(extract_value_or_exit '.deployment.remotePath')
     echo "Connecting to $connection_address SSH"
-    exec_ssh "cd $deployment_path ; bash --login"
+    exec_ssh "cd $deployment_remote_path ; bash --login"
 elif [[ $1 == "deploy" ]]; then
     delete_arg=$([[ $2 == "clean" ]] && echo "--delete")
     connection_user=$(extract_value_or_exit '.connection.user')
     connection_key_path=$(extract_value_or_exit '.connection.keyPath')
     exclude_list=($(jq -r '.deployment.rsyncExclude | .[]' "$project_definition"))
-    deployment_path=$(extract_value_or_exit '.deployment.path')
-    rsync_exclude_options=""
+    deployment_remote_path=$(extract_value_or_exit '.deployment.remotePath')
+    deployment_local_path=$(extract_value_or_exit '.deployment.localPath')
+
     for exclude_item in "${exclude_list[@]}"; do
-        rsync_exclude_options+=" --exclude=$exclude_item"
+        exclude_options+=("--exclude=$exclude_item")
     done
 
-    rsync -az -e "ssh -i $connection_key_path" --progress $delete_arg $rsync_exclude_options ./* $connection_user@$connection_address:$deployment_path
+    (cd $deployment_local_path && rsync -az -e "ssh -i $connection_key_path" --progress $delete_arg ${exclude_options[@]} ./* $connection_user@$connection_address:$deployment_remote_path)
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
     restart_path=$(extract_value_or_exit '.restart.path')
