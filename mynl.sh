@@ -6,17 +6,20 @@ if [ ! -f $project_definition ]; then
     exit 1
 fi
 
-project=$(jq -r '.name' $project_definition)
-if [ "$project" = "null" ]; then
-    echo "Error: Project name not found in the $project_definition file."
-    exit 1
-fi
+function extract_value_or_exit() {
+    local key=$1
+    local value=$(jq -r "$key" "$project_definition")
 
-deployment_path=$(jq -r '.deployment.path' $project_definition)
-if [ "$deployment_path" = "null" ]; then
-    echo "Error: Deployment path not found in the $project_definition file."
-    exit 1
-fi
+    if [ "$value" = "null" ]; then
+        echo "Error: $key not found in the $project_definition file."
+        exit 1
+    fi
+
+    echo "$value"
+}
+
+project=$(extract_value_or_exit '.name')
+connection_address=$(extract_value_or_exit '.connection.address')
 
 echo_colorize() {
     local input="$1"
@@ -56,63 +59,51 @@ function print_usage()
 
 function exec_ssh()
 {
-    ssh -i ~/.ssh/nl -t ubuntu@mynl.pl "$1"
+    connection_user=$(extract_value_or_exit '.connection.user')
+    connection_key_path=$(extract_value_or_exit '.connection.keyPath')
+    ssh -i $connection_key_path -t $connection_user@$connection_address "$1"
 }
 
 SERVER_RESPONSE=""
 function rcon_execute()
 {
-    rcon=$(jq -r '.cod2.rconPassword' $project_definition)
+    rcon=$(extract_value_or_exit '.cod2.rconPassword')
     cmd=$@
-
-    if [ "$rcon" = "null" ]; then
-        echo "Error: RCON password not found in the $project_definition file."
-        exit 1
-    fi
-
     server_execute "rcon $rcon $cmd"
 }
 
 function server_execute()
 {
-    cod2_port=$(jq -r '.cod2.port' $project_definition)
-    if [ "$cod2_port" = "null" ]; then
-        echo "Error: CoD2 port not found in the $project_definition file."
-        exit 1
-    fi
-
-    ip=mynl.pl
+    cod2_port=$(extract_value_or_exit '.cod2.port')
     cmd=$@
     obfuscated_cmd=$(echo $cmd | perl -pe 's/(rcon) (\w+) (.+)/\1 ***** \3/g')
-    echo "Executing command '$obfuscated_cmd' for server $ip:$cod2_port."
+    echo "Executing command '$obfuscated_cmd' for server $connection_address:$cod2_port."
 
-    response=$(echo -n -e "\xff\xff\xff\xff$cmd" | nc -u -w 2 mynl.pl $cod2_port)
+    response=$(echo -n -e "\xff\xff\xff\xff$cmd" | nc -u -w 2 $connection_address $cod2_port)
     clean_response=${response//$'\xff\xff\xff\xffprint'}
     clean_response=$(echo $clean_response | tr -cd '\11\12\15\40-\176')
     SERVER_RESPONSE=$clean_response
 }
 
 if [[ $1 == "connect" ]]; then
-    echo "Connecting to mynl.pl SSH"
+    deployment_path=$(extract_value_or_exit '.deployment.path')
+    echo "Connecting to $connection_address SSH"
     exec_ssh "cd $deployment_path ; bash --login"
 elif [[ $1 == "deploy" ]]; then
     delete_arg=$([[ $2 == "clean" ]] && echo "--delete")
+    connection_user=$(extract_value_or_exit '.connection.user')
+    connection_key_path=$(extract_value_or_exit '.connection.keyPath')
     exclude_list=($(jq -r '.deployment.rsyncExclude | .[]' "$project_definition"))
-
+    deployment_path=$(extract_value_or_exit '.deployment.path')
     rsync_exclude_options=""
     for exclude_item in "${exclude_list[@]}"; do
         rsync_exclude_options+=" --exclude=$exclude_item"
     done
 
-    rsync -az -e "ssh -i ~/.ssh/nl" --progress $delete_arg $rsync_exclude_options ./* ubuntu@mynl.pl:$deployment_path
+    rsync -az -e "ssh -i $connection_key_path" --progress $delete_arg $rsync_exclude_options ./* $connection_user@$connection_address:$deployment_path
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $1 == "restart" ]]; then
-    restart_path=$(jq -r '.restart.path' $project_definition)
-    if [ "$restart_path" = "null" ]; then
-        echo "Error: Restart path not found in the $project_definition file."
-        exit 1
-    fi
-
+    restart_path=$(extract_value_or_exit '.restart.path')
     detach_arg=$([[ $2 == "detach" ]] && echo "detach")
     [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
     exec_ssh "cd $restart_path && ./restart.sh $detach_arg"

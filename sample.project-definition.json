@@ -1,5 +1,10 @@
 {
     "name": "nl-cod2-map-test",
+    "connection": {
+        "address": "mynl.pl",
+        "user": "ubuntu",
+        "keyPath": "~/.ssh/nl"
+    },
     "deployment": {
         "path": "~/cod2/servers/nl-cod2-map-test",
         "rsyncExclude": [
