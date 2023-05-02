@@ -65,14 +65,14 @@ function exec_ssh()
 SERVER_RESPONSE=""
 function rcon_execute()
 {
-    rcon=$(extract_value_or_exit ".profiles.$profile.cod2.rconPassword")
+    rcon=$(extract_value_or_exit ".profiles.\"$profile\".cod2.rconPassword")
     cmd=$@
     server_execute "rcon $rcon $cmd"
 }
 
 function server_execute()
 {
-    cod2_port=$(extract_value_or_exit ".profiles.$profile.cod2.port")
+    cod2_port=$(extract_value_or_exit ".profiles.\"$profile\".cod2.port")
     cmd=$@
     obfuscated_cmd=$(echo $cmd | perl -pe 's/(rcon) (\w+) (.+)/\1 ***** \3/g')
     echo "Executing command '$obfuscated_cmd' for server $connection_address:$cod2_port."
@@ -90,7 +90,7 @@ if [[ -z $profile ]]; then
     profile=default
 fi
 
-if [[ $(jq -r ".profiles.$profile" "$project_definition") = "null" ]]; then
+if [[ $(jq -r ".profiles.\"$profile\"" "$project_definition") = "null" ]]; then
     echo "Error: Profile named '$profile' not found, to change profile try:"
     echo "export PROFILE=myprofile"
     exit 1
@@ -100,15 +100,15 @@ echo "Executing with profile $profile"
 connection_address=$(extract_value_or_exit '.connection.address')
 
 if [[ $command == "connect" ]]; then
-    deployment_remote_path=$(extract_value_or_exit ".profiles.$profile.remoteDeploymentPath")
+    deployment_remote_path=$(extract_value_or_exit ".profiles.\"$profile\".remoteDeploymentPath")
     echo "Connecting to $connection_address SSH"
     exec_ssh "cd $deployment_remote_path ; bash --login"
 elif [[ $command == "deploy" ]]; then
     connection_user=$(extract_value_or_exit '.connection.user')
     connection_key_path=$(extract_value_or_exit '.connection.keyPath')
-    exclude_list=($(jq -r ".profiles.$profile.rsyncExclude | .[]" "$project_definition"))
-    deployment_remote_path=$(extract_value_or_exit ".profiles.$profile.remoteDeploymentPath")
-    deployment_local_path=$(extract_value_or_exit ".profiles.$profile.localDeploymentPath")
+    exclude_list=($(jq -r ".profiles.\"$profile\".rsyncExclude | .[]" "$project_definition"))
+    deployment_remote_path=$(extract_value_or_exit ".profiles.\"$profile\".remoteDeploymentPath")
+    deployment_local_path=$(extract_value_or_exit ".profiles.\"$profile\".localDeploymentPath")
 
     for exclude_item in "${exclude_list[@]}"; do
         exclude_options+=("--exclude=$exclude_item")
@@ -117,13 +117,13 @@ elif [[ $command == "deploy" ]]; then
     (cd $deployment_local_path && rsync -az -e "ssh -i $connection_key_path" --progress --delete ${exclude_options[@]} ./* $connection_user@$connection_address:$deployment_remote_path)
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $command == "restart" ]]; then
-    restart_path=$(extract_value_or_exit ".profiles.$profile.restartPath")
+    restart_path=$(extract_value_or_exit ".profiles.\"$profile\".restartPath")
     detach_arg=$([[ $2 == "detach" ]] && echo "detach")
     [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
     exec_ssh "cd $restart_path && ./restart.sh $detach_arg"
 elif [[ $command == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
-    project=$(extract_value_or_exit ".profiles.$profile.containerName")
+    project=$(extract_value_or_exit ".profiles.\"$profile\".containerName")
     exec_ssh "docker logs $flag_arg $project"
 elif [[ $command == "serverinfo" ]]; then
     rcon_execute "serverinfo"
