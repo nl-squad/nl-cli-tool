@@ -43,6 +43,8 @@ function print_usage()
     echo -e "mynl restart detached \t\t Executes restart.sh on remote machine with detached mode."
     echo -e "mynl logs follow \t\t Attaches to project log stream."
     echo -e "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
+    echo -e "mynl unpack \t\t\t Unpacks all iwd files and places them in iwds/ directory."
+    echo -e "mynl pack \t\t\t Packs the unpacked iwd files."
     echo ""
     echo "RCON commands:"
     echo -e "mynl getstatus \t\t\t Gets public server status (without using rcon password)."
