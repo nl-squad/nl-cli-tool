@@ -164,12 +164,15 @@ elif [[ $command == "exec" ]]; then
     rcon_execute "${@:2}"
     echo $SERVER_RESPONSE
 elif [[ $command == "unpack" ]]; then
+    iwds_path=$(extract_value_or_exit ".profiles.\"$profile\".cod2.iwdsPath") || { echo $iwds_path; exit $?; }
+
     if [ -d iwds ]; then
         echo "The iwds directory exists. Firstly remove it or pack using 'mynl pack'."
         exit 1
     fi
 
-    for iwd_file in src/nl/*.iwd; do
+    echo "Unpacking iwd files from '$iwds_path' to 'iwds' directory"
+    for iwd_file in $iwds_path/*.iwd; do
         base_filename=$(basename "$iwd_file")
         target_folder="iwds/$base_filename"
         mkdir -p "$target_folder"
@@ -177,17 +180,20 @@ elif [[ $command == "unpack" ]]; then
         echo "Unpacked: $iwd_file"
     done
 elif [[ "$command" == "pack" ]]; then
+    iwds_path=$(extract_value_or_exit ".profiles.\"$profile\".cod2.iwdsPath") || { echo $iwds_path; exit $?; }
+
+    echo "Packing directories from 'iwds' to '$iwds_path' iwd files"
     for iwd_folder in iwds/*.iwd/; do
         base_foldername=$(basename "$iwd_folder")
-        tmp_iwd_path="iwds/$base_foldername.tmp"
-        iwd_path="src/nl/$base_foldername"
-        (cd "$iwd_folder" && find . -type f | sort | zip -q -X -r -@ "../../$tmp_iwd_path")
+        tmp_iwd_path=$(realpath "iwds/$base_foldername.tmp")
+        iwd_path="$iwds_path/$base_foldername"
+        (cd "$iwd_folder" && find . -type f | sort | zip -q -X -r -@ "$tmp_iwd_path")
         new_iwd_sha=$(sha256sum $tmp_iwd_path | awk '{print $1}')
         old_iwd_sha=$(sha256sum $iwd_path | awk '{print $1}')
 
         if [[ "$new_iwd_sha" != "$old_iwd_sha" ]]; then
             mv $tmp_iwd_path $iwd_path
-            echo "Packed: $iwd_path"
+            echo "Packed: $iwd_path"    
         else
             echo "Unchanged: $iwd_path"
         fi
