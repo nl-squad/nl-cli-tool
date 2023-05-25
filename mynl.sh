@@ -200,7 +200,6 @@ elif [[ "$command" == "pack" ]]; then
             echo "Unchanged: $iwd_path"
         fi
     done
-    rm -rf iwds
 elif [[ -z $command ]]; then
     echo "Error: Missing verb"
     print_usage
