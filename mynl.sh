@@ -197,6 +197,7 @@ elif [[ "$command" == "pack" ]]; then
             mv $tmp_iwd_path $iwd_path
             echo "Packed: $iwd_path"    
         else
+            rm $tmp_iwd_path
             echo "Unchanged: $iwd_path"
         fi
     done
