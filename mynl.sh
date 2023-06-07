@@ -50,7 +50,8 @@ function print_usage()
     echo -e "mynl getstatus \t\t\t Gets public server status (without using rcon password)."
     echo -e "mynl serverinfo \t\t Prints server information."
     echo -e "mynl status \t\t\t Prints the status of the server."
-    echo -e "mynl rotate \t\t\t Rptates the map on server to the next one."
+    echo -e "mynl mapres \t\t\t Restarts the map on server."
+    echo -e "mynl rotate \t\t\t Rotates the map on server to the next one."
     echo -e "mynl map <map-name> \t\t Changes map to requested one."
     echo -e "mynl exec <command> \t\t Performs given command on the server."
     echo ""
@@ -156,6 +157,9 @@ elif [[ $command == "getstatus" ]]; then
             echo_colorize "Name: $player_name ^7| Score: ^2$player_score"
         done <<< "$players_list"
     fi
+elif [[ $command == "mapres" ]]; then
+    rcon_execute "map_restart"
+    echo $SERVER_RESPONSE
 elif [[ $command == "rotate" ]]; then
     rcon_execute "map_rotate"
     echo $SERVER_RESPONSE
