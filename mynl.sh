@@ -193,7 +193,7 @@ elif [[ "$command" == "pack" ]]; then
         base_foldername=$(basename "$iwd_folder")
         tmp_iwd_path=$(realpath "iwds/$base_foldername.tmp")
         iwd_path="$iwds_path/$base_foldername"
-        (cd "$iwd_folder" && find . -type f | sort | zip -q -X -r -@ "$tmp_iwd_path")
+        (cd "$iwd_folder" && find . -type f \! -name ".DS_Store" | sort | zip -q -X -r -@ "$tmp_iwd_path")
         new_iwd_sha=$(sha256sum $tmp_iwd_path | awk '{print $1}')
         old_iwd_sha=$(sha256sum $iwd_path | awk '{print $1}')
 
