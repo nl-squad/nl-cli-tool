@@ -121,9 +121,10 @@ elif [[ $command == "deploy" ]]; then
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $command == "restart" ]]; then
     restart_path=$(extract_value_or_exit ".profiles.\"$profile\".restartPath")
+    restart_docker_compose=$(extract_value_or_exit ".profiles.\"$profile\".restartDockerCompose")
     detach_arg=$([[ $2 == "detach" ]] && echo "detach")
     [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
-    exec_ssh "cd $restart_path && ./restart.sh $detach_arg"
+    exec_ssh "cd $restart_path && ./restart.sh $restart_docker_compose $detach_arg"
 elif [[ $command == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
     project=$(extract_value_or_exit ".profiles.\"$profile\".containerName")
