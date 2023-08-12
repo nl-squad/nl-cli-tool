@@ -181,7 +181,7 @@ elif [[ $command == "unpack" ]]; then
     echo "Unpacking iwd files from '$iwds_path' to 'iwds' directory"
     for iwd_file in $iwds_path/*.iwd; do
         base_filename=$(basename "$iwd_file")
-        target_folder="iwds/$base_filename"
+        target_folder="iwds/$base_filename/all"
         mkdir -p "$target_folder"
         unzip -q "$iwd_file" -d "$target_folder"
         echo "Unpacked: $iwd_file"
@@ -194,7 +194,18 @@ elif [[ "$command" == "pack" ]]; then
         base_foldername=$(basename "$iwd_folder")
         tmp_iwd_path=$(realpath "iwds/$base_foldername.tmp")
         iwd_path="$iwds_path/$base_foldername"
-        (cd "$iwd_folder" && find . -type f \! -name ".DS_Store" | sort | zip -q -X -r -@ "$tmp_iwd_path")
+
+        temp_dir="iwds/$base_foldername.temp"
+        mkdir -p "$temp_dir"
+
+        for subfolder in "$iwd_folder"*/; do
+            find "$subfolder" -type f -exec cp {} "$temp_dir" \;
+        done
+
+        (cd "$temp_dir" && find . -type f \! -name ".DS_Store" | sort | zip -q -X -r -@ "$tmp_iwd_path")
+
+        rm -rf "$temp_dir"
+
         new_iwd_sha=$(sha256sum $tmp_iwd_path | awk '{print $1}')
         old_iwd_sha=$(sha256sum $iwd_path | awk '{print $1}')
 
