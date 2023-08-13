@@ -206,6 +206,7 @@ elif [[ "$command" == "pack" ]]; then
             done
         done
 
+        find "$temp_dir" -type f -exec touch -t 202201010000.00 {} +
         (cd "$temp_dir" && find . -type f \! -name ".DS_Store" | sort | zip -q -X -r -@ "$tmp_iwd_path")
 
         rm -rf "$temp_dir"
