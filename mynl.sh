@@ -198,8 +198,12 @@ elif [[ "$command" == "pack" ]]; then
         temp_dir="iwds/$base_foldername.temp"
         mkdir -p "$temp_dir"
 
-        for subfolder in "$iwd_folder"*/; do
-            find "$subfolder" -type f -exec cp {} "$temp_dir" \;
+        for subfolder in "$iwd_folder"*; do
+            for inner_subfolder in "$subfolder"/*; do
+                relative_path="${inner_subfolder#$subfolder/}"
+                mkdir -p "$temp_dir/$relative_path"
+                cp -R "$inner_subfolder/"* "$temp_dir/$relative_path"
+            done
         done
 
         (cd "$temp_dir" && find . -type f \! -name ".DS_Store" | sort | zip -q -X -r -@ "$tmp_iwd_path")
