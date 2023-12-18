@@ -68,7 +68,9 @@ function exec_ssh()
 SERVER_RESPONSE=""
 function rcon_execute()
 {
-    rcon=$(extract_value_or_exit ".profiles.\"$profile\".cod2.rconPassword") || { echo "Skipping RCON update - .profiles.\"$profile\".cod2.rconPassword not found"; exit $?; }
+    rconPath=$(extract_value_or_exit ".profiles.\"$profile\".cod2.rconPasswordPath") || { echo "Skipping RCON update - .profiles.\"$profile\".cod2.rconPasswordPath not found"; exit $?; }
+    eval rconPath=$rconPath
+    rcon=$(cat $rconPath)
     cmd=$@
     server_execute "rcon $rcon $cmd"
 }
