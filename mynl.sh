@@ -19,6 +19,17 @@ function extract_value_or_exit() {
     echo "$value"
 }
 
+function extract_value_or_empty() {
+    local key=$1
+    local value=$(jq -r "$key" "$project_definition")
+
+    if [ "$value" = "null" ] || [ -z "$value" ]; then
+        echo ""
+    else
+        echo "$value"
+    fi
+}
+
 function echo_colorize() {
     local input="$1"
     local output="${input//^0/\\e[30m}"
@@ -68,11 +79,22 @@ function exec_ssh()
 SERVER_RESPONSE=""
 function rcon_execute()
 {
-    rconPath=$(extract_value_or_exit ".profiles.\"$profile\".cod2.rconPasswordPath") || { echo "Skipping RCON update - .profiles.\"$profile\".cod2.rconPasswordPath not found"; exit $?; }
-    eval rconPath=$rconPath
-    rcon=$(cat $rconPath)
+    source ./secrets
+    rcon_password_var="${profile}_rcon_password"
+
+    if [[ -z ${(P)rcon_password_var} ]]; then
+        echo "Error: rcon_password not set for profile '$profile'."
+        exit 1
+    fi
+
+    rcon_password="${(P)rcon_password_var}"
+    if [[ -z "${rcon_password// /}" ]]; then
+        echo "Error: rcon_password is empty or contains only whitespace."
+        exit 1
+    fi
+
     cmd=$@
-    server_execute "rcon $rcon $cmd"
+    server_execute "rcon $rcon_password $cmd"
 }
 
 function server_execute()
@@ -119,7 +141,52 @@ elif [[ $command == "deploy" ]]; then
         exclude_options+=("--exclude=$exclude_item")
     done
 
+    source ./secrets
+    rcon_password_var="${profile}_rcon_password"
+    g_password_var="${profile}_g_password"
+
+    if [[ -z ${(P)rcon_password_var} ]]; then
+        echo "Error: rcon_password not set for profile '$profile'."
+        exit 1
+    fi
+
+    if [[ -z ${(P)g_password_var} ]]; then
+        echo "Error: g_password not set for profile '$profile'."
+        exit 1
+    fi
+
+    rcon_password="${(P)rcon_password_var}"
+    g_password="${(P)g_password}"
+    cfg_file=$(extract_value_or_empty ".profiles.\"$profile\".cod2.cfgFile")
+
+    if [[ -n "$cfg_file" ]]; then
+        cp src/nl/$cfg_file ${cfg_file}.bak
+
+        echo $cfg_file
+        if [ "$g_password" != " " ]; then
+            echo "Setting g_password"
+            sed -i'' -e "s/set g_password \".*\"/set g_password \"$g_password\"/"  "src/nl/$cfg_file"
+        else
+            echo "Clearing g_password"
+            sed -i'' -e 's/set g_password ".*"/set g_password ""/' "src/nl/$cfg_file"
+        fi
+
+        if [[ -z "${rcon_password// /}" ]]; then
+            echo "Error: rcon_password is empty or contains only whitespace."
+            exit 1
+        fi
+
+        echo "Setting rcon_password"
+        sed -i'' -e "s/set rcon_password \".*\"/set rcon_password \"$rcon_password\"/" "src/nl/$cfg_file"
+    fi
+
     (cd $deployment_local_path && rsync -az -e "ssh -i $connection_key_path" --progress --delete ${exclude_options[@]} ./* $connection_user@$connection_address:$deployment_remote_path)
+
+    if [[ -n "$cfg_file" ]]; then
+        cp ${cfg_file}.bak src/nl/$cfg_file 
+        rm ${cfg_file}.bak
+    fi
+
     rcon_execute "say ^8[UPDATE] ^7Mod version updated"
 elif [[ $command == "restart" ]]; then
     restart_path=$(extract_value_or_exit ".profiles.\"$profile\".restartPath")
