@@ -162,13 +162,12 @@ elif [[ $command == "deploy" ]]; then
     if [[ -n "$cfg_file" ]]; then
         cp src/nl/$cfg_file ${cfg_file}.bak
 
-        echo $cfg_file
         if [ "$g_password" != " " ]; then
             echo "Setting g_password"
-            sed -i'' -e "s/set g_password \".*\"/set g_password \"$g_password\"/"  "src/nl/$cfg_file"
+            sed -i '' "s/set g_password \".*\"/set g_password \"$g_password\"/" "src/nl/$cfg_file"
         else
             echo "Clearing g_password"
-            sed -i'' -e 's/set g_password ".*"/set g_password ""/' "src/nl/$cfg_file"
+            sed -i '' 's/set g_password ".*"/set g_password ""/' "src/nl/$cfg_file"
         fi
 
         if [[ -z "${rcon_password// /}" ]]; then
@@ -177,7 +176,7 @@ elif [[ $command == "deploy" ]]; then
         fi
 
         echo "Setting rcon_password"
-        sed -i'' -e "s/set rcon_password \".*\"/set rcon_password \"$rcon_password\"/" "src/nl/$cfg_file"
+        sed -i '' "s/set rcon_password \".*\"/set rcon_password \"$rcon_password\"/" "src/nl/$cfg_file"
     fi
 
     (cd $deployment_local_path && rsync -az -e "ssh -i $connection_key_path" --progress --delete ${exclude_options[@]} ./* $connection_user@$connection_address:$deployment_remote_path)
