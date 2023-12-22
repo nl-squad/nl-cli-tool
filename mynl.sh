@@ -156,7 +156,7 @@ elif [[ $command == "deploy" ]]; then
     fi
 
     rcon_password="${(P)rcon_password_var}"
-    g_password="${(P)g_password}"
+    g_password="${(P)g_password_var}"
     cfg_file=$(extract_value_or_empty ".profiles.\"$profile\".cod2.cfgFile")
 
     if [[ -n "$cfg_file" ]]; then
