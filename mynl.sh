@@ -56,6 +56,7 @@ function print_usage()
     echo -e "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
     echo -e "mynl unpack \t\t\t Unpacks all iwd files and places them in iwds/ directory."
     echo -e "mynl pack \t\t\t Packs the unpacked iwd files."
+    echo -e "mynl sync \t\t\t The one to rule them all - pack, deploy, mapres or full restart if required."
     echo ""
     echo "RCON commands:"
     echo -e "mynl getstatus \t\t\t Gets public server status (without using rcon password)."
@@ -106,7 +107,7 @@ function server_execute()
 
     response=$(echo -n -e "\xff\xff\xff\xff$cmd" | nc -u -w 2 $connection_address $cod2_port)
     clean_response=${response//$'\xff\xff\xff\xffprint'}
-    clean_response=$(echo $clean_response | tr -cd '\11\12\15\40-\176')
+    clean_response=$(echo $clean_response | LC_ALL=C tr -cd '\11\12\15\40-\176')
     SERVER_RESPONSE=$clean_response
 }
 ### Functions - end
@@ -290,6 +291,20 @@ elif [[ "$command" == "pack" ]]; then
             echo "Unchanged: $iwd_path"
         fi
     done
+elif [[ $command == "sync" ]]; then
+    server_execute "getstatus"
+    hostname=$(echo "$SERVER_RESPONSE" | awk -F'\\' '{for (i=1; i<=NF; i++) if ($i == "sv_hostname") print $(i+1)}')
+
+    script_dir=$(dirname "$0")
+    "$script_dir/mynl.sh" pack
+    "$script_dir/mynl.sh" deploy
+
+    if [[ -n "$hostname" ]]; then
+        "$script_dir/mynl.sh" mapres
+        "$script_dir/mynl.sh" logs follow
+    else
+        "$script_dir/mynl.sh" restart
+    fi
 elif [[ -z $command ]]; then
     echo "Error: Missing verb"
     print_usage
