@@ -15,6 +15,7 @@ Tool for NL servers management and control. Created because of a lack of public 
 - getting info and status
 - creating .iwd files
 - unpacking .iwd files
+- release management
 
 # 🛫 Installation
 

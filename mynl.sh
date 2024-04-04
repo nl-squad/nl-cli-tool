@@ -49,14 +49,16 @@ function print_usage()
 {
     echo "Control commands:"
     echo -e "mynl connect \t\t\t Connects to the machine."
-    echo -e "mynl deploy \t\t\t Sync current content."
+    echo -e "mynl deploy \t\t\t Syncs current content."
     echo -e "mynl restart \t\t\t Executes restart.sh on remote machine."
     echo -e "mynl restart detached \t\t Executes restart.sh on remote machine with detached mode."
     echo -e "mynl logs follow \t\t Attaches to project log stream."
     echo -e "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
     echo -e "mynl unpack \t\t\t Unpacks all iwd files and places them in iwds/ directory."
     echo -e "mynl pack \t\t\t Packs the unpacked iwd files."
-    echo -e "mynl sync \t\t\t The one to rule them all - pack, deploy, mapres or full restart if required."
+    echo -e "mynl sync \t\t\t The one to rule them all - packs, deploys, restarts map or fully restarts if required."
+    echo -e "mynl release-version <version> \t Releases a new version by creating a branch from main, deploying, and setting up for public."
+    echo -e "mynl finalize-version <version> \t Finalizes development of a version by tagging and pushing the tag to the repository."
     echo ""
     echo "RCON commands:"
     echo -e "mynl getstatus \t\t\t Gets public server status (without using rcon password)."
@@ -305,6 +307,29 @@ elif [[ $command == "sync" ]]; then
     else
         "$script_dir/mynl.sh" restart
     fi
+elif [[ $command == "finalize-version" ]]; then
+    version=$2
+    if [[ -z $version ]]; then
+        echo "Error: Version number required to finalize."
+        exit 1
+    fi
+    git checkout "version/$version" && git pull
+    git tag $version && git push --tags
+    echo "Finalized version $version and pushed tags to remote."
+
+elif [[ $command == "release-version" ]]; then
+    new_version=$2
+    if [[ -z $new_version ]]; then
+        echo "Error: New version number required to release."
+        exit 1
+    fi
+    git checkout main && git pull
+    git checkout -b "version/$new_version"
+    git push -u origin "version/$new_version"
+    script_dir=$(dirname "$0")
+    "$script_dir/mynl.sh" pack
+    PROFILE=public "$script_dir/mynl.sh" deploy
+    echo "Released $new_version to the public server."
 elif [[ -z $command ]]; then
     echo "Error: Missing verb"
     print_usage
