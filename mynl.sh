@@ -153,11 +153,6 @@ elif [[ $command == "deploy" ]]; then
         exit 1
     fi
 
-    if [[ -z ${(P)g_password_var} ]]; then
-        echo "Error: g_password not set for profile '$profile'."
-        exit 1
-    fi
-
     rcon_password="${(P)rcon_password_var}"
     g_password="${(P)g_password_var}"
     cfg_file=$(extract_value_or_empty ".profiles.\"$profile\".cod2.cfgFile")
