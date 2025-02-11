@@ -188,13 +188,11 @@ elif [[ $command == "deploy" ]]; then
 elif [[ $command == "restart" ]]; then
     restart_path=$(extract_value_or_exit ".profiles.\"$profile\".restartPath")
     restart_docker_compose=$(extract_value_or_exit ".profiles.\"$profile\".restartDockerCompose")
-    detach_arg=$([[ $2 == "detach" ]] && echo "detach")
-    [[ -z $detach_arg ]] && echo "Ctrl + \\ to detach"
-    exec_ssh "cd $restart_path && ./restart.sh $restart_docker_compose $detach_arg"
+    exec_ssh "cd $restart_path && ./restart.sh $restart_docker_compose"
 elif [[ $command == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
     project=$(extract_value_or_exit ".profiles.\"$profile\".containerName")
-    exec_ssh "docker logs $flag_arg $project"
+    exec_ssh "docker service logs $flag_arg ${project}_${project} --raw"
 elif [[ $command == "serverinfo" ]]; then
     rcon_execute "serverinfo"
     echo $SERVER_RESPONSE
@@ -258,7 +256,6 @@ elif [[ "$command" == "pack" ]]; then
     echo "Packing directories from 'iwds' to '$iwds_path' iwd files"
     for iwd_folder in iwds/*.iwd/; do
         base_foldername=$(basename "$iwd_folder")
-        tmp_iwd_path=$(realpath "iwds/$base_foldername.tmp")
         iwd_path="$iwds_path/$base_foldername"
 
         temp_dir="iwds/$base_foldername.temp"
@@ -272,6 +269,7 @@ elif [[ "$command" == "pack" ]]; then
             done
         done
 
+        tmp_iwd_path=$(realpath "iwds")/$base_foldername.tmp
         find "$temp_dir" -type f -exec touch -t 202201010000.00 {} +
         (cd "$temp_dir" && find . -type f \! -name ".DS_Store" | sort | zip -q -X -r -@ "$tmp_iwd_path")
 
