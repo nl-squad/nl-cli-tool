@@ -192,9 +192,14 @@ elif [[ $command == "restart" ]]; then
 elif [[ $command == "logs" ]]; then
     flag_arg=$([[ $2 == "follow" ]] && echo "-f" || ([[ $2 =~ ^[0-9]+$ ]] && echo "--tail $2" || echo ""))
     project=$(extract_value_or_exit ".profiles.\"$profile\".containerName")
-    task_id=$(docker service ps nl-cod2-zom-dev_nl-cod2-zom-dev --filter "desired-state=running" --format "{{.ID}}" -q)
-    container_id=$(docker inspect --format '{{.Status.ContainerStatus.ContainerID}}' $task_id)
-    docker logs $flag_arg $container_id
+    task_id=$(docker service ps ${project}_${project} --filter "desired-state=running" --format "{{.ID}}" -q)
+    if [ -n "$task_id" ]; then
+        container_id=$(docker inspect --format '{{.Status.ContainerStatus.ContainerID}}' $task_id)
+        docker logs $flag_arg $container_id
+    else
+        echo "Warning: Container not found - printing service logs"
+        docker service logs $flag_arg ${project}_${project} --raw
+    fi
 elif [[ $command == "serverinfo" ]]; then
     rcon_execute "serverinfo"
     echo $SERVER_RESPONSE
