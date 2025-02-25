@@ -54,6 +54,7 @@ function print_usage()
     echo -e "mynl restart detached \t\t Executes restart.sh on remote machine with detached mode."
     echo -e "mynl logs follow \t\t Attaches to project log stream."
     echo -e "mynl logs [tail-lines] \t\t Prints all or last n lines of logs."
+    echo -e "mynl history [index=1] \t\t Prints tail of 1=last shutdown instance, 2=second last."
     echo -e "mynl unpack \t\t\t Unpacks all iwd files and places them in iwds/ directory."
     echo -e "mynl pack \t\t\t Packs the unpacked iwd files."
     echo -e "mynl sync \t\t\t The one to rule them all - packs, deploys, restarts map or fully restarts if required."
@@ -200,6 +201,18 @@ elif [[ $command == "logs" ]]; then
         echo "Warning: Container not found - printing service logs"
         docker service logs $flag_arg ${project}_${project} --raw
     fi
+elif [[ $command == "history" ]]; then
+    skip=${2:-1}
+    if ! [[ $skip =~ ^[0-9]+$ ]]; then
+        echo "Error: Argument must be a positive number"
+        exit 1
+    fi
+    project=$(extract_value_or_exit ".profiles.\"$profile\".containerName")
+    task_id=$(docker service ps -f "desired-state=shutdown" ${project}_${project} --format "{{.ID}}" -q | tail -n +$skip | head -n 1)
+    echo "task_id=${task_id}"
+    container_id=$(docker inspect --format '{{.Status.ContainerStatus.ContainerID}}' $task_id)
+    echo "container_id=${container_id}"
+    docker logs --tail 200 $container_id
 elif [[ $command == "serverinfo" ]]; then
     rcon_execute "serverinfo"
     echo $SERVER_RESPONSE
